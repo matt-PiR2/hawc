@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from django.conf import settings
+from django.contrib.admin.helpers import AdminForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpRequest
 from django.shortcuts import render
@@ -29,6 +30,7 @@ class Dashboard(HtmxView):
         "growth",
         "users",
         "daily_changes",
+        "sql_query",
     }
 
     def index(self, request: HttpRequest, *args, **kwargs):
@@ -83,6 +85,23 @@ class Dashboard(HtmxView):
     def daily_changes(self, request: HttpRequest, *args, **kwargs):
         data = methods.daily_changes()
         return render(request, "admin/fragments/changes.html", data)
+
+    def sql_query(self, request: HttpRequest, *args, **kwargs):
+        form = methods.SqlQuery(data=request.GET)
+        fieldsets = [(None, {"fields": list(form.base_fields)})]
+        admin_form = AdminForm(form=form, fieldsets=fieldsets, prepopulated_fields={})
+        df = message = None
+        if form.is_valid():
+            message, df = form.run_query()
+        return render(
+            request,
+            "admin/fragments/sql_query.html",
+            {
+                "form": admin_form,
+                "message": message,
+                "df": df,
+            },
+        )
 
 
 @method_decorator(staff_member_required, name="dispatch")

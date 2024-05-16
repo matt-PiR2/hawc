@@ -629,9 +629,11 @@ def sql_query_to_dicts(sql: str, params: Iterable | None = None) -> Iterator[dic
     Yields:
         Iterator[dict]: an iterator of dictionaries
     """
-    if sql.upper().startswith("SELECT") is False:
-        raise ValueError("Query must start with SELECT")
     with connection.cursor() as cursor:
-        cursor.execute(sql, params)
+        cursor.execute("SET default_transaction_read_only = true")
+        try:
+            cursor.execute(sql, params)
+        finally:
+            cursor.execute("SET default_transaction_read_only = false")
         columns = [col[0] for col in cursor.description]
         yield from (dict(zip(columns, row, strict=True)) for row in cursor.fetchall())

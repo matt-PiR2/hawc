@@ -1,0 +1,15 @@
+<div hx-target="this" hx-swap="outerHTML">
+  <form hx-get="{% url 'admin_dashboard' %}?action=sql_query" hx-trigger="submit">
+    {% block field_sets %}
+      {% for fieldset in form %}
+        {% include "admin/includes/fieldset.html" %}
+      {% endfor %}
+    {% endblock %}
+    {% csrf_token %}
+    <div class="submit-row">
+      <button type="submit">Execute</button>
+    </div>
+  </form>
+  {% if message %}<p>{{message}}</p>{% endif %}
+  {% if df is not None %}{{ df.to_html|safe }}{% endif %}
+</div>

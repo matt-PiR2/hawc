@@ -11,6 +11,7 @@ from django.utils import timezone
 from ...animal.models import Endpoint
 from ...assessment.models import Assessment
 from ...common.helper import HAWCtoDateString
+from ...common.models import sql_query_to_dicts
 from ...lit.models import Reference
 from ...riskofbias.models import RiskOfBias
 from ...study.models import Study
@@ -163,3 +164,22 @@ def size_df() -> pd.DataFrame:
 
     # format column names for readability
     return df1.rename(lambda c: c.replace("_", " "), axis="columns")
+
+
+class SqlQuery(forms.Form):
+    query = forms.CharField(required=True, widget=forms.Textarea)
+    params = forms.CharField(
+        required=False, widget=forms.Textarea, help_text="A comma separated list"
+    )
+
+    def run_query(self) -> tuple[str, pd.DataFrame | None]:
+        data = self.cleaned_data
+        query = data["query"]
+        params = [val.strip() for val in data.get("params", "").split(",")]
+        try:
+            response = list(sql_query_to_dicts(query, params))
+        except Exception:
+            return "Invalid query", None
+        if len(response) == 0:
+            return "No results", None
+        return "", pd.DataFrame(data=response)
